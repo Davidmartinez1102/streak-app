@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Nofap Streak</title>
+  <style>
+    body { font-family: system-ui, Arial; margin: 18px; max-width: 720px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 14px; margin: 12px 0; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; }
+    label { font-size: 14px; color: #333; }
+    input, textarea, select, button { font-size: 16px; padding: 10px; border-radius: 10px; border: 1px solid #ccc; }
+    textarea { width: 100%; min-height: 90px; }
+    button { cursor: pointer; }
+    .pill { display:inline-block; padding: 6px 10px; border-radius: 999px; background: #f2f2f2; }
+    .ok { color: #0a7; font-weight: 600; }
+    .bad { color: #c00; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+  </style>
+</head>
+<body>
+  <h1>🔥 Nofap Streak</h1>
+
+  <div class="card">
+    <div class="row">
+      <div class="pill">Racha actual: <span id="currentStreak">—</span></div>
+      <div class="pill">Mejor racha: <span id="bestStreak">—</span></div>
+    </div>
+    <p id="status"></p>
+    <button onclick="refreshAll()">Actualizar</button>
+  </div>
+
+  <div class="card">
+    <h2>Registrar día</h2>
+    <div class="row">
+      <div>
+        <label>Fecha</label><br />
+        <input id="date" type="date" />
+      </div>
+      <div>
+        <label>Estado</label><br />
+        <select id="completed">
+          <option value="true">✅ Cumplí</option>
+          <option value="false">❌ No cumplí, pero aprendí</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:10px;">
+      <label>Observación (opcional)</label><br />
+      <textarea id="note" placeholder="¿Cómo te sentiste hoy? ¿Qué pasó?"></textarea>
+    </div>
+    <div style="margin-top:10px;">
+      <button onclick="submitCheckin()">Guardar</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Historial</h2>
+    <table>
+      <thead>
+        <tr><th>Fecha</th><th>Estado</th><th>Nota</th></tr>
+      </thead>
+      <tbody id="history"></tbody>
+    </table>
+  </div>
+
+<script>
+  function apiBase() {
+    return window.location.origin; // mismo host donde corre FastAPI
+  }
+
+  function setStatus(msg, isError=false) {
+    const el = document.getElementById("status");
+    el.textContent = msg;
+    el.className = isError ? "bad" : "ok";
+  }
+
+  async function refreshStreak() {
+    const res = await fetch(`${apiBase()}/streak`);
+    const data = await res.json();
+    document.getElementById("currentStreak").textContent = data.current_streak;
+    document.getElementById("bestStreak").textContent = data.best_streak;
+  }
+
+  async function refreshHistory() {
+    const res = await fetch(`${apiBase()}/checkins?limit=3650`);
+    const data = await res.json();
+    const tbody = document.getElementById("history");
+    tbody.innerHTML = "";
+    for (const item of data.items) {
+      const tr = document.createElement("tr");
+      const status = item.completed ? "✅" : "❌";
+      tr.innerHTML = `<td>${item.date}</td><td>${status}</td><td>${escapeHtml(item.note || "")}</td>`;
+      tbody.appendChild(tr);
+    }
+  }
+
+  function escapeHtml(s) {
+    return (s || "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+  }
+
+  async function submitCheckin() {
+    const date = document.getElementById("date").value;
+    const completed = document.getElementById("completed").value === "true";
+    const note = document.getElementById("note").value;
+
+    if (!date) {
+      setStatus("Selecciona una fecha.", true);
+      return;
+    }
+
+    const payload = { date, completed, note };
+
+    const res = await fetch(`${apiBase()}/checkin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      setStatus("Guardado ✅");
+      document.getElementById("note").value = "";
+      await refreshAll();
+      return;
+    }
+
+    // Manejo de error
+    const text = await res.text();
+    if (res.status === 409) {
+      setStatus("Ese día ya fue registrado (bloqueado).", true);
+    } else {
+      setStatus(`Error (${res.status}): ${text}`, true);
+    }
+  }
+
+  async function refreshAll() {
+    try {
+      await refreshStreak();
+      await refreshHistory();
+    } catch (e) {
+      setStatus("No pude actualizar (¿está corriendo el servidor?).", true);
+    }
+  }
+
+  // set hoy por defecto
+  document.getElementById("date").valueAsDate = new Date();
+  refreshAll();
+</script>
+</body>
+</html>
