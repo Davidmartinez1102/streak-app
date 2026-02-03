@@ -67,8 +67,11 @@
 
 <script>
   function apiBase() {
-    return window.location.origin; // mismo host donde corre FastAPI
-  }
+  const isLocal = location.hostname === "127.0.0.1" || location.hostname === "localhost";
+  return isLocal ? "http://127.0.0.1:8000" : `${window.location.origin}/api`;
+}
+
+
 
   function setStatus(msg, isError=false) {
     const el = document.getElementById("status");
