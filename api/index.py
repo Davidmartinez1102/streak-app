@@ -2,6 +2,9 @@ from __future__ import annotations
 from fastapi.responses import FileResponse
 
 
+
+
+
 import os
 import sqlite3
 from datetime import date, timedelta
@@ -135,15 +138,17 @@ from pathlib import Path
 from fastapi.responses import FileResponse
 from fastapi import HTTPException
 
+import os
+from fastapi import Response
+
 @app.get("/")
 def home():
-    # En Vercel NO servimos el HTML desde Python
-    if os.environ.get("VERCEL") == "1":
+    # En Vercel: NO intentes devolver /public/index.html desde Python
+    if os.environ.get("VERCEL"):
         raise HTTPException(status_code=404)
 
-    # En local sí lo servimos desde /public/index.html
+    # En local sí servimos el HTML
     html_path = Path(__file__).resolve().parents[1] / "public" / "index.html"
     if not html_path.exists():
         raise HTTPException(status_code=500, detail=f"No existe: {html_path}")
     return FileResponse(html_path)
-
