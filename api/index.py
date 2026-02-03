@@ -141,14 +141,3 @@ from fastapi import HTTPException
 import os
 from fastapi import Response
 
-@app.get("/")
-def home():
-    # En Vercel: NO intentes devolver /public/index.html desde Python
-    if os.environ.get("VERCEL"):
-        raise HTTPException(status_code=404)
-
-    # En local sí servimos el HTML
-    html_path = Path(__file__).resolve().parents[1] / "public" / "index.html"
-    if not html_path.exists():
-        raise HTTPException(status_code=500, detail=f"No existe: {html_path}")
-    return FileResponse(html_path)
