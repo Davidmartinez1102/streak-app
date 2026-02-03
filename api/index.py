@@ -1,4 +1,6 @@
 from __future__ import annotations
+from fastapi.responses import FileResponse
+
 
 import os
 import sqlite3
