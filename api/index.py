@@ -1,5 +1,8 @@
 from __future__ import annotations
 from fastapi.responses import FileResponse
+    
+
+
 
 
 
@@ -67,7 +70,7 @@ def parse_iso(d: str) -> date:
     except ValueError:
         raise HTTPException(status_code=422, detail="date debe estar en formato YYYY-MM-DD")
 
-@app.post("/checkin")
+@app.post("/api/checkin")
 def create_checkin(data: CheckIn):
     parse_iso(data.date)
     conn = get_connection()
@@ -84,7 +87,7 @@ def create_checkin(data: CheckIn):
         conn.close()
     return {"ok": True}
 
-@app.get("/checkins")
+@app.get("/api/checkins")
 def list_checkins(limit: int = 3650):
     conn = get_connection()
     cur = conn.cursor()
@@ -121,7 +124,7 @@ def compute_streaks(rows_completed_dates_desc: list[str]) -> tuple[int, int]:
 
     return current, best
 
-@app.get("/streak")
+@app.get("/api/streak")
 def get_streak():
     conn = get_connection()
     cur = conn.cursor()
@@ -131,13 +134,5 @@ def get_streak():
     current, best = compute_streaks(rows)
     return {"current_streak": current, "best_streak": best}
 
-    from fastapi.responses import FileResponse
-from pathlib import Path
-import os
-from pathlib import Path
-from fastapi.responses import FileResponse
-from fastapi import HTTPException
 
-import os
-from fastapi import Response
 
