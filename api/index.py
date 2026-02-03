@@ -130,4 +130,20 @@ def get_streak():
 
     from fastapi.responses import FileResponse
 from pathlib import Path
+import os
+from pathlib import Path
+from fastapi.responses import FileResponse
+from fastapi import HTTPException
+
+@app.get("/")
+def home():
+    # En Vercel NO servimos el HTML desde Python
+    if os.environ.get("VERCEL") == "1":
+        raise HTTPException(status_code=404)
+
+    # En local sí lo servimos desde /public/index.html
+    html_path = Path(__file__).resolve().parents[1] / "public" / "index.html"
+    if not html_path.exists():
+        raise HTTPException(status_code=500, detail=f"No existe: {html_path}")
+    return FileResponse(html_path)
 
