@@ -131,8 +131,3 @@ def get_streak():
     from fastapi.responses import FileResponse
 from pathlib import Path
 
-@app.get("/")
-def home():
-    # sirve el frontend desde /public/index.html (raíz del proyecto)
-    return FileResponse(Path(__file__).resolve().parents[1] / "public" / "index.html")
-
